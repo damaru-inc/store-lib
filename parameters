@@ -1,0 +1,5 @@
+    parameters:
+      originatorId:
+        description: The system that generated the message.
+        schema:
+          type: string

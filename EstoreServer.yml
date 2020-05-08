@@ -1,0 +1,116 @@
+components:
+  schemas:
+    ItemView:
+      $schema: 'http://json-schema.org/draft-07/schema'
+      additionalItems: true
+      description: ''
+      type: array
+      title: ItemView
+      items:
+        default: {}
+        examples:
+          - - price: 18.99
+              description: Coffee
+              id: 333
+              category: coffee
+        description: An array of item views.
+        additionalProperties: true
+        type: object
+        title: ItemViewArray
+        required: []
+        properties:
+          price:
+            default: 0
+            examples:
+              - 18.99
+            description: The item price.
+            type: number
+            title: price
+            $id: '#/items/properties/price'
+          description:
+            default: ''
+            examples:
+              - Coffee
+            description: The description of the item.
+            type: string
+            title: description
+            $id: '#/items/properties/description'
+          id:
+            default: 0
+            examples:
+              - 333
+            description: The ID of the item
+            type: integer
+            title: id
+            $id: '#/items/properties/id'
+          category:
+            default: ''
+            examples:
+              - coffee
+            description: The category.
+            type: string
+            title: category
+            $id: '#/items/properties/category'
+        $id: '#/items'
+      $id: 'http://example.com/example.json'
+    Query:
+      default: {}
+      $schema: 'http://json-schema.org/draft-07/schema'
+      description: ''
+      additionalProperties: true
+      type: object
+      title: Query
+      required:
+        - eventType
+        - entityType
+      properties:
+        entityType:
+          default: ''
+          examples:
+            - item
+            - category
+          description: Which model entity.
+          type: string
+          title: The Entitytype Schema
+          $id: '#/properties/entityType'
+        eventType:
+          default: ''
+          examples:
+            - command
+          description: 'command, data or notification.'
+          type: string
+          $id: '#/properties/eventType'
+      $id: 'http://example.com/example.json'
+  messages:
+    QueryEvent:
+      payload:
+        $ref: '#/components/schemas/Query'
+      description: ''
+      schemaFormat: application/vnd.aai.asyncapi+json;version=2.0.0
+      contentType: application/json
+    ItemViewEvent:
+      payload:
+        $ref: '#/components/schemas/ItemView'
+      description: ''
+      schemaFormat: application/vnd.aai.asyncapi+json;version=2.0.0
+      contentType: application/json
+channels:
+  'estore/command/query/{originatorId}':
+    subscribe:
+      message:
+        $ref: '#/components/messages/QueryEvent'
+    publish:
+      message:
+        $ref: '#/components/messages/QueryEvent'
+  'estore/data/queryResponse/{originatorId}':
+    subscribe:
+      message:
+        $ref: '#/components/messages/ItemViewEvent'
+    publish:
+      message:
+        $ref: '#/components/messages/ItemViewEvent'
+asyncapi: 2.0.0
+info:
+  description: ''
+  title: EstoreServer
+  version: 0.0.1
