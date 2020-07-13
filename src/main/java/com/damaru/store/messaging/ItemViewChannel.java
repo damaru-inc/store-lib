@@ -2,6 +2,8 @@
 package com.damaru.store.messaging;
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -17,8 +19,12 @@ import com.solacesystems.jcsmp.XMLMessageConsumer;
 import com.solacesystems.jcsmp.XMLMessageListener;
 import com.solacesystems.jcsmp.XMLMessageProducer;
 
+import java.nio.ByteBuffer;
+
 @Component
 public class ItemViewChannel {
+
+	public static final Logger log = LoggerFactory.getLogger(ItemViewChannel.class);
 
 	// Channel name: estore/data/queryResponse/{originatorId}
 	private static final String PUBLISH_TOPIC = "estore/data/queryResponse/%s";
@@ -29,6 +35,7 @@ public class ItemViewChannel {
 	private JCSMPSession jcsmpSession;
 	private Serializer<ItemViewArray> serializer;
 	private TextMessage textMessage = JCSMPFactory.onlyInstance().createMessage(TextMessage.class);
+	private BytesXMLMessage bytesMessage = JCSMPFactory.onlyInstance().createMessage(BytesXMLMessage.class);
 	private XMLMessageProducer producer;
 	private XMLMessageConsumer consumer;
 
@@ -42,6 +49,7 @@ public class ItemViewChannel {
 		PublishEventHandler handler = new PublishEventHandler(publishListener);
 		producer = jcsmpSession.getMessageProducer(handler);
 		textMessage.setDeliveryMode(DeliveryMode.DIRECT);
+		bytesMessage.setDeliveryMode(DeliveryMode.DIRECT);
 	}
 
 
@@ -63,6 +71,7 @@ public class ItemViewChannel {
 		Topic topic = formatTopic(originatorId);
 		ItemViewArray payload = itemViewEvent.getPayload();
 		String payloadString = serializer.serialize(payload);
+		log.info("Sending {}", payloadString);
 		textMessage.setText(payloadString);
 		producer.send(textMessage, topic);
 	}
@@ -70,7 +79,9 @@ public class ItemViewChannel {
 	public void sendItemViewArray(ItemViewArray itemViewArray, String originatorId) throws Exception {
 		Topic topic = formatTopic(originatorId);
 		String payloadString = serializer.serialize(itemViewArray);
-		textMessage.setText(payloadString);
+		payloadString = "{\"itemView\":[{\"price\":23.45,\"description\":\"Komodo Dragon\",\"category\":\"coffee\"}]}";
+		log.info("Sending array {}", payloadString);
+		textMessage.writeAttachment(payloadString.getBytes());
 		producer.send(textMessage, topic);
 	}
 
@@ -104,6 +115,10 @@ public class ItemViewChannel {
 			if (bytesXMLMessage instanceof  TextMessage) {
 				TextMessage textMessage = (TextMessage) bytesXMLMessage;
 				text = textMessage.getText();
+				if (text == null) {
+					ByteBuffer buffer = textMessage.getAttachmentByteBuffer();
+					text = new String(buffer.array());
+				}
 			} else if (bytesXMLMessage instanceof BytesMessage) {
 				text = new String(((BytesMessage) bytesXMLMessage).getData());
 			}
