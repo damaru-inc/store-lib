@@ -20,11 +20,13 @@ import com.solacesystems.jcsmp.XMLMessageListener;
 import com.solacesystems.jcsmp.XMLMessageProducer;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 @Component
 public class ItemViewChannel {
 
 	public static final Logger log = LoggerFactory.getLogger(ItemViewChannel.class);
+	private static Charset UTF8 = Charset.forName("UTF-8");
 
 	// Channel name: estore/data/queryResponse/{originatorId}
 	private static final String PUBLISH_TOPIC = "estore/data/queryResponse/%s";
@@ -79,9 +81,13 @@ public class ItemViewChannel {
 	public void sendItemViewArray(ItemViewArray itemViewArray, String originatorId) throws Exception {
 		Topic topic = formatTopic(originatorId);
 		String payloadString = serializer.serialize(itemViewArray);
-		payloadString = "{\"itemView\":[{\"price\":23.45,\"description\":\"Komodo Dragon\",\"category\":\"coffee\"}]}";
-		log.info("Sending array {}", payloadString);
-		textMessage.writeAttachment(payloadString.getBytes());
+		//payloadString = "{\"itemView\":[{\"price\":23.45,\"description\":\"Komodo Dragon\",
+		// \"category\":\"coffee\"}]}";
+
+		log.info("Sending {}", payloadString);
+		//payloadString = "{\"a\":1}";
+		textMessage.clearAttachment();
+		textMessage.writeAttachment(payloadString.getBytes(UTF8));
 		producer.send(textMessage, topic);
 	}
 
